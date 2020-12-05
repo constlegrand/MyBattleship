@@ -58,6 +58,7 @@ io.on('connection', (socket) => {
 
   socket.on('chat messages', (msg) => {
     socket.broadcast.to(users[socket.id].roomName).emit('chat messages', msg);
+    io.to(socket.id).emit('chat messages', msg);
   });
 });
 

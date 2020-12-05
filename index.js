@@ -9,32 +9,39 @@ app.get('/', (req, res) => {
 
 
 var gameNumber = 1;
-var store = [];
-
-
+var userWaiting = [];
+var users = {};
 
 io.on('connection', (socket) => {
   console.log('user ' + socket.id + ' connected');
   io.emit('chat messages', 'user connected')
 
+  users[socket.id] = {
+    id: socket.id,
+    roomName: null,
+  };
 
 
   socket.join('waitingRoom');
+  users[socket.id].roomName = 'waitingRoom';
+  userWaiting.push(socket);
+  if (userWaiting.length >= 2) {
+    
+    thisRoom = 'game' + gameNumber;
 
-  store.push(socket);
-  if (store.length >= 2) {
-    console.log(gameNumber);
-    console.log('gg waitingroom')
-    store[0].leave('waitingRoom');
-    store[1].leave('waitingRoom');
-    store[0].join('game'+ gameNumber);
-    store[1].join('game'+ gameNumber);
-    store.shift();
-    store.shift();
+    userWaiting[0].leave('waitingRoom');
+    userWaiting[1].leave('waitingRoom');
+    userWaiting[0].join(thisRoom);
+    userWaiting[1].join(thisRoom);
+     
+    users[userWaiting[0].id].roomName = thisRoom;
+    users[userWaiting[1].id].roomName = thisRoom;
+    userWaiting.shift();
+    userWaiting.shift();
     io.to('game' + gameNumber).emit('join', 'game' + gameNumber);
+    
     gameNumber++;
     
-    //console.log(store[0].id + 'and' + store[1].id + 'are in room : ' + store[0].room);
   }
 
 
@@ -50,7 +57,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('chat messages', (msg) => {
-    io.emit('chat messages', msg);
+    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', msg);
   });
 });
 

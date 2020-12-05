@@ -31,6 +31,8 @@ function fire(socket, msg) {
       socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'touche');
       io.to(socket.id).emit('chat messages', 'touche');
       users[socket.id].score++;
+      users[socket.id].foe.ships.splice(users[socket.id].foe.ships.indexOf(order[1]),1);
+
     } else{
       socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'failed');
       io.to(socket.id).emit('chat messages', 'failed');
@@ -40,7 +42,7 @@ function fire(socket, msg) {
 
 }
 function isWinner(socket) { 
-  if (users[socket.id].score >= users[socket.id].foe.ships.length){
+  if (users[socket.id].foe.ships.length < 1){
     socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'u lose');
     io.to(socket.id).emit('chat messages', 'u win');
   }

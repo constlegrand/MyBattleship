@@ -14,7 +14,7 @@ var users = {};
 var ships = ['a1', 'a2'];
 var score = 0;
 
-function isShotOnShip(ships, coord) {
+function hastouched(ships, coord) {
   var result = false;
   for (var i in ships){
     if (coord.toLowerCase() === ships[i].toLowerCase()){
@@ -24,9 +24,32 @@ function isShotOnShip(ships, coord) {
   return result;
 }
 
+function fire(socket, msg) {
+  if (msg.includes('Fire:')){
+    var order = msg.trim().split(' ');
+    if (hastouched(users[socket.id].foe.ships, order[1])) {
+      socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'touche');
+      io.to(socket.id).emit('chat messages', 'touche');
+      users[socket.id].score++;
+    } else{
+      socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'failed');
+      io.to(socket.id).emit('chat messages', 'failed');
+    }  
 
+  }
 
+}
+function isWinner(socket) { 
+  if (users[socket.id].score >= users[socket.id].foe.ships.length){
+    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'u lose');
+    io.to(socket.id).emit('chat messages', 'u win');
+  }
+}
 
+function setFoe(user, userfoe) {
+  users[user].foe = users[userfoe];
+}
+    
 
 io.on('connection', (socket) => {
   console.log('user ' + socket.id + ' connected');
@@ -35,6 +58,10 @@ io.on('connection', (socket) => {
   users[socket.id] = {
     id: socket.id,
     roomName: null,
+    ships: ships,
+    score: 0,
+    histurn: false,
+    foe: null,
   };
 
 
@@ -42,22 +69,24 @@ io.on('connection', (socket) => {
   users[socket.id].roomName = 'waitingRoom';
   userWaiting.push(socket);
   if (userWaiting.length >= 2) {
-    
+
     thisRoom = 'game' + gameNumber;
 
     userWaiting[0].leave('waitingRoom');
     userWaiting[1].leave('waitingRoom');
     userWaiting[0].join(thisRoom);
     userWaiting[1].join(thisRoom);
-     
+
     users[userWaiting[0].id].roomName = thisRoom;
     users[userWaiting[1].id].roomName = thisRoom;
+    setFoe(userWaiting[0].id, userWaiting[1].id);
+    setFoe(userWaiting[1].id, userWaiting[0].id);
     userWaiting.shift();
     userWaiting.shift();
     io.to('game' + gameNumber).emit('join', 'game' + gameNumber);
-    
+
     gameNumber++;
-    
+
   }
 
 
@@ -75,25 +104,8 @@ io.on('connection', (socket) => {
   socket.on('chat messages', (msg) => {
     socket.broadcast.to(users[socket.id].roomName).emit('chat messages', msg);
     io.to(socket.id).emit('chat messages', msg);
-    if (msg.includes('Fire:')){
-      console.log('launch atk');
-      var order = msg.trim();
-      var array = order.split(' ');
-      console.log('locate ' + array[1]);
-      if (isShotOnShip(ships, array[1])) {
-    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'touche');
-    io.to(socket.id).emit('chat messages', 'touche');
-        score++;
-      } else{
-    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'failed');
-    io.to(socket.id).emit('chat messages', 'failed');
-      }  
-
-      if (score >= ships.length){
-    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'u lose');
-    io.to(socket.id).emit('chat messages', 'u win');
-      }
-    }
+    fire(socket, msg);
+    isWinner(socket);
   });
 });
 

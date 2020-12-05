@@ -11,6 +11,22 @@ app.get('/', (req, res) => {
 var gameNumber = 1;
 var userWaiting = [];
 var users = {};
+var ships = ['a1', 'a2'];
+var score = 0;
+
+function isShotOnShip(ships, coord) {
+  var result = false;
+  for (var i in ships){
+    if (coord.toLowerCase() === ships[i].toLowerCase()){
+      result = true;
+    }
+  }
+  return result;
+}
+
+
+
+
 
 io.on('connection', (socket) => {
   console.log('user ' + socket.id + ' connected');
@@ -59,6 +75,25 @@ io.on('connection', (socket) => {
   socket.on('chat messages', (msg) => {
     socket.broadcast.to(users[socket.id].roomName).emit('chat messages', msg);
     io.to(socket.id).emit('chat messages', msg);
+    if (msg.includes('Fire:')){
+      console.log('launch atk');
+      var order = msg.trim();
+      var array = order.split(' ');
+      console.log('locate ' + array[1]);
+      if (isShotOnShip(ships, array[1])) {
+    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'touche');
+    io.to(socket.id).emit('chat messages', 'touche');
+        score++;
+      } else{
+    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'failed');
+    io.to(socket.id).emit('chat messages', 'failed');
+      }  
+
+      if (score >= ships.length){
+    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'u lose');
+    io.to(socket.id).emit('chat messages', 'u win');
+      }
+    }
   });
 });
 

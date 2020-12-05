@@ -31,11 +31,11 @@ io.on('connection', (socket) => {
     store[1].join('game'+ gameNumber);
     store.shift();
     store.shift();
+    io.to('game' + gameNumber).emit('join', 'game' + gameNumber);
     gameNumber++;
     
-    console.log(gameNumber);
+    //console.log(store[0].id + 'and' + store[1].id + 'are in room : ' + store[0].room);
   }
-  io.to('game' + gameNumber).emit('join', 'game' + gameNumber);
 
 
 

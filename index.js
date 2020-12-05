@@ -23,6 +23,7 @@ io.on('connection', (socket) => {
 
   store.push(socket);
   if (store.length >= 2) {
+    console.log(gameNumber);
     console.log('gg waitingroom')
     store[0].leave('waitingRoom');
     store[1].leave('waitingRoom');
@@ -30,9 +31,11 @@ io.on('connection', (socket) => {
     store[1].join('game'+ gameNumber);
     store.shift();
     store.shift();
-
+    gameNumber++;
+    
+    console.log(gameNumber);
   }
-
+  io.to('game' + gameNumber).emit('join', 'game' + gameNumber);
 
 
 

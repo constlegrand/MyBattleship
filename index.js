@@ -39,24 +39,30 @@ function hastouched(ships, coord) {
   return result;
 }
 
-function fire(socket, msg) {
+function fireAndMessage(socket, msg) {
   if (msg.includes('Fire:') && users[socket.id].hisTurn ){
     var order = msg.trim().split(' ');
     if (hastouched(users[socket.id].foe.ships, order[1])) {
-      socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'touche');
-      io.to(socket.id).emit('chat messages', 'touche');
+      socket.broadcast.to(users[socket.id].roomName).emit('chat messages', msg);
+      io.to(socket.id).emit('chat messages', msg);
+      socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'Foe hits us !');
+      io.to(socket.id).emit('chat messages', 'We hit our foe');
       users[socket.id].score++;
       users[socket.id].foe.ships.splice(users[socket.id].foe.ships.indexOf(order[1]),1);
 
     } else{
-      socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'failed');
-      io.to(socket.id).emit('chat messages', 'failed');
+      socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'Foe failed');
+      io.to(socket.id).emit('chat messages', 'We failed');
     } 
     users[socket.id].hisTurn = false;
     users[socket.id].foe.hisTurn = true;
 
   } else if (msg.includes('Fire:') && !users[socket.id].hisTurn) {
      io.to(socket.id).emit('chat messages', 'hold on, still not your turn'); 
+  } else {
+      socket.broadcast.to(users[socket.id].roomName).emit('chat messages','Foe : ' + msg);
+      io.to(socket.id).emit('chat messages','Me : ' + msg);
+
   }
 
 }
@@ -124,9 +130,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('chat messages', (msg) => {
-    socket.broadcast.to(users[socket.id].roomName).emit('chat messages', msg);
-    io.to(socket.id).emit('chat messages', msg);
-    fire(socket, msg);
+    fireAndMessage(socket, msg);
     isWinner(socket);
   });
 });

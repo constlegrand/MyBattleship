@@ -14,6 +14,21 @@ var users = {};
 var ships = ['a1', 'a2'];
 var score = 0;
 
+
+function setTurn (player1, player2) {
+  turn = Math.random() < 0.5
+  users[player1].hisTurn = turn
+  users[player2].hisTurn = !turn
+   
+  if (users[player1].hisTurn = turn) {
+    io.to(users[player1].id).emit('chat messages', 'you begin !');
+    io.to(users[player2].id).emit('chat messages', 'the foe begin !');
+  } else {  
+      io.to(users[player2].id).emit('chat messages', 'you begin !');
+      io.to(users[player1].id).emit('chat messages', 'the foe begin !');
+  }
+}
+
 function hastouched(ships, coord) {
   var result = false;
   for (var i in ships){
@@ -62,7 +77,7 @@ io.on('connection', (socket) => {
     roomName: null,
     ships: ships,
     score: 0,
-    histurn: false,
+    hisTurn: false,
     foe: null,
   };
 
@@ -83,6 +98,9 @@ io.on('connection', (socket) => {
     users[userWaiting[1].id].roomName = thisRoom;
     setFoe(userWaiting[0].id, userWaiting[1].id);
     setFoe(userWaiting[1].id, userWaiting[0].id);
+    setTurn(userWaiting[1].id, userWaiting[0].id);
+    console.log('first turn' + users[userWaiting[1].id].hisTurn);
+    console.log('second turn' + users[userWaiting[0].id].hisTurn);
     userWaiting.shift();
     userWaiting.shift();
     io.to('game' + gameNumber).emit('join', 'game' + gameNumber);

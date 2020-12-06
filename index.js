@@ -51,7 +51,9 @@ function fire(socket, msg) {
     } else{
       socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'failed');
       io.to(socket.id).emit('chat messages', 'failed');
-    }  
+    } 
+    users[socket.id].hisTurn = false;
+    users[socket.id].foe.hisTurn = true;
 
   } else if (msg.includes('Fire:') && !users[socket.id].hisTurn) {
      io.to(socket.id).emit('chat messages', 'hold on, still not your turn'); 

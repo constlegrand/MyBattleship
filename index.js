@@ -40,7 +40,7 @@ function hastouched(ships, coord) {
 }
 
 function fire(socket, msg) {
-  if (msg.includes('Fire:')){
+  if (msg.includes('Fire:') && users[socket.id].hisTurn ){
     var order = msg.trim().split(' ');
     if (hastouched(users[socket.id].foe.ships, order[1])) {
       socket.broadcast.to(users[socket.id].roomName).emit('chat messages', 'touche');
@@ -53,6 +53,8 @@ function fire(socket, msg) {
       io.to(socket.id).emit('chat messages', 'failed');
     }  
 
+  } else if (msg.includes('Fire:') && !users[socket.id].hisTurn) {
+     io.to(socket.id).emit('chat messages', 'hold on, still not your turn'); 
   }
 
 }
@@ -99,8 +101,6 @@ io.on('connection', (socket) => {
     setFoe(userWaiting[0].id, userWaiting[1].id);
     setFoe(userWaiting[1].id, userWaiting[0].id);
     setTurn(userWaiting[1].id, userWaiting[0].id);
-    console.log('first turn' + users[userWaiting[1].id].hisTurn);
-    console.log('second turn' + users[userWaiting[0].id].hisTurn);
     userWaiting.shift();
     userWaiting.shift();
     io.to('game' + gameNumber).emit('join', 'game' + gameNumber);
